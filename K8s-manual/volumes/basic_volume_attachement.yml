@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mongo-pod
+spec:
+#? If attaching the pv to pod 
+  # volumes:
+  #   - name: task-pv-storage
+  #     persistentVolumeClaim:
+  #       claimName: task-pv-claim
+  containers:
+  - image: mongo:latest
+    name: mongo-db-container
+    volumeMounts:
+    - mountPath: /data/db
+      name: mongo-volume
+  volumes:
+  - name: mongo-volume
+  #? This is type of attachment or volume remains at pod level when a pod gets deleted the volume will also get deleted
+    emptyDir:
+      sizeLimit: 500Mi
+    # emptyDir: {}
+  #? This volume attached at node-level
+    hostPath:
+      path: /data

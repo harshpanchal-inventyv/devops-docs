@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+spec:
+  serviceName: "mongo"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+        - image: mongo:latest
+          name: mongo
+          args: ["--dbpath", "/data/db"]
+          command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: "admin"
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: "password"
+          volumeMounts:
+            - mountPath: /data/db
+              name: mongo-volume
+  volumeClaimTemplates:
+    - metadata:
+        name: mongo-volume
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: demo-storage
+        resources:
+          requests:
+            storage: 1Gi
+
+
+# ------------------------------------------------------------
+rs.initiate(
+   {
+      _id: "rs0",
+      members: [
+         { _id: 0, host : "mongodb-0.mongo.db.svc.cluster.local:27017" },
+         { _id: 1, host : "mongodb-1.mongo.db.svc.cluster.local:27017" }
+      ]
+   }
+)
+
+# cfg = rs.conf()
+# cfg.members[0].host = "mongodb-0.mongo.default.svc.cluster.local:27017"
+# cfg.members[1].host = "mongodb-1.mongo.default.svc.cluster.local:27017"
+# cfg.members[2].host = "mongodb-2.mongo.default.svc.cluster.local:27017"
+# rs.reconfig(cfg)
+
+# 10.244.0.4
+# 10.244.0.5
+# 10.244.0.6
+
+
+# // put this inside the secondary pods when u are going to read them
+# db.getMongo().setReadPref("secondary")

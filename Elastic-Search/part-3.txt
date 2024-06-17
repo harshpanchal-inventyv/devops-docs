@@ -1,0 +1,133 @@
+Thsi file includes the concept for mappings - dynamic and custom mappings, reindex concept
+
+
+
+// Create a students index and add a document at same time so that mapping was created dynamically
+PUT students/_doc/1 
+{
+  "name": "Harsh",
+  "age": 21
+}
+
+// This is how mapping can be visualized
+GET students/_mapping
+
+// Basic index deletion command
+DELETE students
+
+
+// Customised mappings for the index
+// after setting this, still dynamic mapping will works
+PUT students
+{
+  "mappings": {
+    "properties": {
+      "name": {
+        "type": "text"
+      },
+      "age": {
+        "type": "integer"
+      }
+    }
+  }
+}
+
+// To stop dynamic mapping to make schema strict we can add a flag like [dynamic:false]
+PUT students
+{
+  // dynamic false was at root level but can also be assigned at field level
+  "mappings": {
+    "dynamic": false,
+    "properties": {
+      "name": {
+        "type": "text"
+      },
+      "age": {
+        "type": "integer"
+      }
+    }
+  }
+}
+
+
+POST students/_doc/1
+{
+  "name": "Suresh",
+  "age": 30
+}
+
+
+GET students/_search  
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+
+// Mappings can't be updated over time but yes we can create new mappings
+
+
+// reindex concept : transferring data from one index to another index
+
+// created a index
+PUT students
+
+// added few students
+POST students/_doc/1
+{
+  "name": "Harsh",
+  "age": 21
+}
+
+// Basic visualization for students
+GET students/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+// visualize the mapping
+GET students/_mapping
+
+
+// Now if we want to change the field type for age from long to int then we need to create new index with required schema or mapping and then tranfers data from last index to new index
+
+PUT students_new 
+{
+  "mappings": {
+    "properties": {
+      "name": {
+        "type": "text"
+      },
+      "age": {
+        "type": "integer"
+      }
+    }
+  }  
+}
+
+// Now reindexing or transferring data
+
+POST _reindex
+{
+  "source": {
+    "index": "students"
+  },
+  "dest": {
+    "index": "students_new"
+  },
+  "script": {
+    "source": "ctx._source.id = ctx._source.name + ctx._source.age"
+  }
+}
+
+GET students_new/_search 
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+

@@ -1,0 +1,119 @@
+#? Scheduling Concepts
+#* nodeName
+#* nodeSelector
+#* affinity - podAffinity/podAntiAffinity/nodeAffinity
+#* taint & tolerations - taint(applies to node), tolerations(applies to pods)
+
+
+# API deployment (d-1)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: todo-api
+  template:
+    metadata:
+      name: todo-api-pod
+      labels:
+        app: todo-api
+    spec:
+      containers:
+        - name: todo-api
+          image: pavanelthepu/todo-api:1.0.2
+          ports:
+            - containerPort: 8082
+          env:
+            - name: "spring.data.mongodb.uri"
+              value: "mongodb+srv://root:321654@cluster0.p9jq2.mongodb.net/todo?retryWrites=true&w=majority"
+      #? Provide Immunity against taint
+      tolerations:
+        - key: "env"
+          operator: "Equal"
+          value: "production"
+          effect: "NoSchedule"
+      affinity:
+      #? It deploys pod where the pod with label app=todo-ui is present (co-locate pods with pods labels)
+        podAffinity: #? There are two types podAffinity (to schedule there) & podAntiAffinity (not to schedule there)
+          requiredDuringSchedulingIgnoredDuringExecution:
+            labelSelector:
+              - matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - "todo-ui"
+            #? It defines the node name where to deploy this pod, where the pod with label app=todo-ui is present
+            topologyKey: kubernetes.io/hostname
+
+# UI deployment (d-2)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-ui
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: todo-ui
+  template:
+    metadata:
+      name: todo-ui-pod
+      labels:
+        app: todo-ui
+    spec:
+      #? Here we need to mention the node name to schedule it manually
+      # nodeName: minikube-m02
+      #? As we can also assign labels to node so we can add node selector here to deploy pods on specific nodes only
+      # nodeSelector:
+      #   team: analytics
+      #? As affinity is a great alternative to nodeSelector as it can provide the queries for pod scheduling (Two types basically nodeAffinity and podAffinity)
+      affinity:
+        nodeAffinity:
+          # requiredDuringSchedulingIgnoredDuringExecution:
+          #   nodeSelectorTerms:
+          #     - matchExpressions:
+          #         - key: rank
+          #           operator: Lt
+          #           values:
+          #             - "5"
+          # ? We can assign weights to out conditions for preference tasks
+          # preferredDuringSchedulingIgnoredDuringExecution:
+          #   - weight: 40
+          #     preference:
+          #       matchExpressions:
+          #       - key: "team"
+          #         operator: In
+          #         values: ["analytics"]
+          #   - weight: 60
+          #     preference:
+          #       matchExpressions:
+          #       - key: "rank"
+          #         operator: Gt
+          #         values: ["4"]
+      containers:
+        - name: todo-ui
+          image: pavanelthepu/todo-ui:1.0.2
+          ports:
+            - containerPort: 80
+          env:
+            - name: "REACT_APP_BACKEND_SERVER_URL"
+              value: "http://todo.com/api"
+
+#todo: Terms in affinity
+#         During Scheduling     During Execution
+# Hard      Required              Ignored
+# Soft      Preferred             Ignored
+
+
+#todo: Guidliness regarding the scheduling for nodes (for nodeAffinity)
+#? 1. If we use both the nodeSelector and affinity then a pod will follow the scheduling instruction only if both conditions are aligned otherwise it will noschedule
+#? 2. If there are multiple nodeSelectorTerms then only if one term was satisfied the pod will schedule 
+#? 3. If there are multiple matchExpressions inside a nodeSelectorTerms then all must be satisfies to schedule a pod
+
+#todo: Regarding taint and tolerations
+# NoSchedule - Hard (Do not schedule pod if they can't tolerate)
+# PreferNoSchedule - Soft (Can be scheduled if no other nodes available)
+# NoExecute - Strict (Delete running pods also if they can't tolerate newly added taint)

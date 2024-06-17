@@ -1,0 +1,86 @@
+#& Basic workflow setup
+name: Basic Workflow # Workflow level
+
+on: push
+
+#Workflow level env variables
+env: 
+  DOCKER_IMAGE: nginx
+
+jobs: # Job level
+    first_job:
+        runs-on: ubuntu-latest
+        steps: # Steps level
+          - name: Checkout repository
+            uses: actions/checkout@v4
+
+          - name: List and read file
+            run: |
+              echo "Inside this list and read file step"
+          - name: Upload artifact # Using upload artifact we can share few files or any thing between jobs
+            uses: actions/upload-artifact@v3
+            with:
+              name: share_file
+              path: file.txt
+# This is how we can create multiple jobs (jobs using their own vm)
+    second_job:
+        needs: first_job | [array_of_jobs] # This is how you can maintain the execution of jobs (it can be array as well)
+        runs-on: ubuntu-latest
+        steps: # Steps level
+          - name: Checkout repository
+            uses: actions/checkout@v4
+
+          - name: List and read file
+            run: |
+              echo "Inside this list and read file step"
+# This is how you can download artifact
+          - name: Download artifact
+            uses: actions/download-artifact@v3
+            with:
+              name: share_file
+
+# This is how you can access the secret from github
+          - name: Access secrets
+            run: echo ${{ secrets.DOCKER_TAG }}
+
+    thrid_job:
+        runs-on: ubuntu-latest
+        # Ways to use env variables in jobs
+        env: 
+          DOCKER_PASSWORD: harsh123
+
+        steps: # Steps level
+          - name: Checkout repository
+            uses: actions/checkout@v4
+
+          - name: use env variables
+          # Can be applied at job level or step level (if it place on job level then every step has a time limit eg 1 min) 
+            timeout-minutes: 1 # If this step takes more than a min then it terminates this job
+            run: |
+              echo $DOCKER_PASSWORD
+              echo ${{ env.DOCKER_PASSWORD }}
+
+          - name: step level env variables also accessible to step level
+            env: 
+              DOCKER_EMAIL: harsh@gmail.com
+            run: |
+              echo $DOCKER_EMAIL
+
+          - name: List and read file
+            run: |
+              echo "Inside this list and read file step"
+
+      fourth_job:
+        runs-on: ubuntu-latest
+        needs: third_jobs
+        # This will not allow the concurrency if first workflow will started and reached to fourth_job and at same time there ia another workflow was running and when it reached the fourth_job then the first workflow fourth_job was cancelled and if the value set to false then it wait for first workflow job to compleete
+        concurrency: # place at job level or workflow level
+          group: production-deployment
+          cancel-in-progress: true
+        # Ways to use env variables in jobs
+        env: 
+          DOCKER_PASSWORD: harsh123
+
+        steps: # Steps level
+          - name: Accessing the repository variables
+            run: echo ${{ vars.VARIABLE_NAME }}

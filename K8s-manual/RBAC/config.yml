@@ -1,0 +1,76 @@
+# This is a sample config file to understand the RBAC and how to works and give access to user
+apiVersion: v1
+#? This is a cluster section
+clusters:
+- cluster:
+    #todo : Main certificate authority which can verify users certificate to get access in cluster
+    certificate-authority: /home/harsh/.minikube/ca.crt
+    extensions:
+    - extension:
+        last-update: Wed, 20 Mar 2024 18:00:18 IST
+        provider: minikube.sigs.k8s.io
+        version: v1.32.0
+      name: cluster_info
+    server: https://127.0.0.1:56010
+  name: minikube
+#? This is a context section (which combines the user and cluster together)
+contexts:
+- context:
+    cluster: minikube
+    extensions:
+    - extension:
+        last-update: Wed, 20 Mar 2024 18:00:18 IST
+        provider: minikube.sigs.k8s.io
+        version: v1.32.0
+      name: context_info
+    namespace: default
+    user: minikube
+  name: minikube
+#? Current context status
+current-context: minikube
+kind: Config
+preferences: {}
+#? This is a user section
+users:
+- name: minikube
+  user:
+    client-certificate: /home/harsh/.minikube/profiles/minikube/client.crt
+    client-key: /home/harsh/.minikube/profiles/minikube/client.key
+
+#? Step to create a user
+
+# 1. create a private key for the user
+#todo: openssl genrsa -out any_name.key 2048
+
+# 2. create a csr(certificate signing request) for user
+#todo: openssl req -new -key any_name.key -out any_name.csr -subj "/CN=user_name/O=grp_name/O=exampl.org"
+
+# 3. self sign the certificate with the help of CA certificate 
+#todo: openssl x509 -req -CA ~/.minikube/ca.crt -CAkey ~/.minikube/ca.key -CAcreateserial -days 730 -in any_name.csr -out any_name.crt
+
+# 4. Add user to config file(directly)
+#todo: kubectl config set-credentials user_name --client-certificate=any_name.cert --client-key=any_name.key
+
+# 5. Adjusting context in config file as per the user
+#todo: kubectl config set-context context_name --cluster=cluster_name --user=user_name --namespace=default
+
+# 6. To use the create context as main it can be done as
+#todo: kubectl config use-context context_name
+
+# There is no role created so that context has no powers to do anything
+
+# --------------------------------------------------------
+
+#* Role & Role-Binding Concept
+#? Subject (user OR service_account OR user_grp) + Role = Role-Binding (Attached permissions to user)
+
+#* Procedure to apply the role/clusterRole & roleBinding/clusterRoleBinding along with it view the concept of service account & groups
+# 1. Go through the role.yml and apply it
+# 2. Checkout the rolebinding and apply it after that switch context and that context or user can now list pods
+# 3. Again check the clusterrole as it is same but it applies at cluster level so namespace doesn't matter
+# 4. Apply the cluster-rolebinding then the context was able to perform commands according to assign role inspite of namespace restriction
+# 5. If there are more users then at time of creating the csr request make all users in single group like in command /O=grp_name make this parameter same among the users
+# 6. For application purpose like spinnaker wants to perform operations on k8s cluster you can assign it a service-account which was mostly used for application permissions
+
+# How to verify that how much permission did a user get
+#* kubectl auth can-i [operation] [resource_name] --as="system:serviceaccount:default:service_account_name"

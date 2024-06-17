@@ -1,0 +1,103 @@
+# There are mainly three probes - liveliness, readiness, startup
+#? Kind of probe checking - exec, http, tcp
+#! exec probe checking (means to check the health by running commands inside the container) | success = 0 | failure = 1
+#! http probe checking (means to check the health by hitting a http URL or path like /health) | success = (200-399) | failure = except success range
+#! tcp probe checking (opens a port and accept the trafiic is a success and not accepting the traffic is failure)
+
+#? Probing customisation
+# initialDelaySeconds -> delay to run the probe initially (default = 0s)
+# periodSecond -> How frequently should probe should execute after initial delay (default = 10s)
+# timeoutSeconds -> Timeout period to mark as failure (default = 1s)
+# failure/successThreshold -> retries in case of failure (default = 3) 
+
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo
+spec:
+  selector:
+    matchLabels:
+      app: mongo
+  serviceName: "mongo"
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:4.0.8
+          # todo: Startup probe (It will execute first, then liveness and readiness will execute only if startup probe is succesfull but if it fails then pod fails to start [pod stopped])
+          startupProbe:
+            exec:
+              command:
+                - mongo
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 1
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 2
+          # todo: liveness probe (It will restart the containers if they get stopped)
+          livenessProbe:
+            exec:
+              command:
+                - mongo
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 1
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 2
+          # todo: readiness probe (If this probe fails then this pod was removed from the service ip list of k8s so that traffic don't reach here)
+          readinessProbe:
+            exec:
+              command:
+                - mongo
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 1
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 2
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  key: username
+                  name: mongodb-config
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: mongodb-secret
+          command:
+            - mongod
+            - "--bind_ip_all"
+            - --config=/etc/mongo/mongodb.conf
+          volumeMounts:
+            - name: mongo-volume
+              mountPath: /data/db
+            - name: mongodb-config
+              mountPath: /etc/mongo
+      volumes:
+        - name: mongodb-config
+          configMap:
+            name: mongodb-config
+            items:
+              - key: mongodb.conf
+                path: mongodb.conf
+  volumeClaimTemplates:
+    - metadata:
+        name: mongo-volume
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: demo-storage
+        resources:
+          requests:
+            storage: 1Gi

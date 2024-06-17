@@ -1,0 +1,96 @@
+// coercion is the concept for type conversion if there is an integer for age so if someone pass "11", elastic searhc try to convert it in integer like typecasting "11" to 11
+
+PUT students
+{
+  "settings": {
+    "index.mapping.coerce": false // This field can stop the type casting at root level
+  }, 
+  "mappings": {
+    "properties": {
+      "name": {
+        "type": "text"
+      },
+      "age": {
+        "type": "integer",
+        "coerce": true // typecasting can also be placed at field level
+      }
+    }
+  }
+}
+
+
+// This is how to add object and nested type of data structure in elastic search
+// creating a schema which contain object and nested
+PUT student 
+{
+  "mappings": {
+    "properties": {
+      "name" : {
+        "type": "object",
+        "properties": {
+          "firstname": {
+            "type": "text"
+          },
+          "lastname": {
+            "type": "text"
+          }
+        }
+      },
+      "experience": {
+        "type": "nested",
+        "properties": {
+          "company_name": {
+            "type": "text"
+          },
+          "duration_in_months": {
+            "type": "integer"
+          }
+        }
+      },
+      "dob": {
+        "type": "date"
+      },
+      "current_salary": {
+        "type": "long"
+      },
+      "email": {
+        "type": "keyword"
+      },
+      "on_notice_period": {
+        "type": "boolean"
+      }
+    }
+  }
+}
+
+
+GET student/_mapping
+
+PUT student/_doc/1
+{
+  "name": {
+    "firstname": "Harsh",
+    "lastname": "panchal"
+  },
+  "experience" : [
+    {
+      "company_name": "ABC pvt ltd",
+      "duration_in_months": 24
+    },
+        {
+      "company_name": "DEF pvt ltd",
+      "duration_in_months": 12
+    }
+  ],
+  "dob": "2003-07-02",
+  "current_salary": 500000,
+  "on_notice_period": true
+}
+
+
+GET student/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}

@@ -1,0 +1,26 @@
+#todo: This is a Peer Authentication file it enables the mTls in namespace where it is defined 
+
+# This file will enable Mtls to foo namespace now no one can access it pod directly
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: foo
+spec:
+  mtls:
+    mode: STRICT # There is another value which is PERMISSIVE and it is default so no access restriction
+
+---
+
+# This is a resource-level peer-authentication it is required to provide the selector and matchLabels for mTls application 
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: finance
+  namespace: foo
+spec:
+  selector:
+    matchLabels:
+      app: finance
+  mtls:
+    mode: STRICT

@@ -1,0 +1,30 @@
+#todo: This is a istio-gateway a single point of contact to access out applications
+
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: app-gateway
+  namespace: istio-system
+spec:
+  selector:
+    istio: ingressgateway # Selects Istio's default ingress gateway implementation
+  servers:
+  # This is for http
+  - port: 
+      number: 80 
+      name: http
+      protocol: HTTP
+      hosts:
+    - "application.harshpanchal.in"
+  # This is for https
+  - port:
+      number: 443
+      name: https-443
+      protocol: HTTPS
+    hosts:
+    - "application.harshpanchal.in"
+    tls:
+      mode: SIMPLE # enables HTTPS on this port
+      # Actually this path here represent the istio-ingress-container's path for https
+      privateKey: /etc/istio/ingressgateway-certs/server.key
+      serverCertificate: /etc/istio/ingressgateway-certs/server.crt

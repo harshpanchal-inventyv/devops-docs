@@ -1,0 +1,60 @@
+#& Basic workflow setup
+name: Basic Workflow # Workflow level
+
+on:
+# This is a manual triggering of workflow
+  workflow_dispatch:
+  # This is a cron job scheduling
+  schedule:
+    - cron: "*/59 * * * *"
+  push:
+  # Can't have both branches-ignore and branches at same time
+  # This will ignores this branches when they push 
+    branches-ignores: 
+      - dev
+      - feature/* # eg for * - feature/add-music
+      - test/** # eg for ** - test/ui/index
+    branches:
+      - main
+      - '!feature/*' # ignores pushing to any branches name starting with features using !
+  pull_request:
+    types:
+      - opened
+      - closed
+    paths-ignore: # workflow will inly run when a pull request that includes a change in other files except README.md
+      - README.md
+    branches: # configures your workflow to only run on pull requests that target specific branches
+      - main
+
+jobs: 
+    first_job:
+    # This condition will check the branch who triggered the workflow if it is not main then give error
+        if: github.ref == "refs/heads/main"
+    # Matrix strategy helps to run the job with multiple values which avoids the repetatiev tasks
+        strategy: 
+          # This works as if one job fails it sets the status to failed the final status
+          fail-fast: true # bydefault is true
+          # Decides the max parallel jobs to run in parallel
+          max-parallel: 2
+          matrix:
+            os: [ubuntu:latest, ubuntu-20.04, windows-latest]
+            images: [hello-world, alpine]
+            # Now this is the exclude section which helps like in this case the alpine won't run on windows-latest
+            exclude:
+              - images: alpine
+                os: windows-latest
+            # This section will include the specific combination of image and os or runs a job for specific combination
+            include: 
+              - images: amd64/alpine
+                os: ubuntu:20.04
+        
+        runs-on: ${{ matrix.os }}
+        steps:
+          - name: Just Check
+            run: echo "Inside the first_job"
+
+          - name: Run docker image
+            run: docker run ${{ matrix.images }}
+
+# todo : If someone makes changes to any file which will not effect code and if you don't want pipeline to trigger then you can pass [skip ci] as a commit message then it won't run the workflow there are many more you can check from docs
+

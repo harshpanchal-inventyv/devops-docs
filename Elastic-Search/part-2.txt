@@ -1,0 +1,71 @@
+This file includes concepts as :
+- index creation
+- info. about shards
+- searching queries 
+- update, update by query
+- bulk insert concept
+- analyze visualization
+
+// Database creation
+PUT customers
+
+// FInding total no of shards
+GET _cat/shards
+
+// Insertion of doc inside index
+POST customers/_doc
+{
+  "name": "Praneet Singh",
+  "age": 30
+}
+
+// Fetching the docs
+GET customers/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+// Updating the docs
+POST customers/_doc/VKsxOY8Bgf_oqaniwA2Z
+{
+  "age": 10
+}
+
+// Updating by query (update by query)
+POST customers/_update_by_query
+{
+  "query": {
+    "match_all": {}
+  },
+  "script": {
+    "source": "ctx._source.age++"
+  }
+}
+
+// deletion using queries
+POST customers/_delete_by_query
+{
+    "query": {
+    "match_all": {}
+  }
+}
+
+// Bulk update
+
+// basic actions -> index, create, update, delete
+POST customers/_bulk
+{ "index": {} }
+{ "name": "Rohit", "age": 35 }
+{ "create": {} }
+{ "name": "Ajay", "age": 40 }
+{ "update": { "_id":  "VKsxOY8Bgf_oqaniwA2Z"} }
+{ "age": 55 }
+{ "delete": { "_id": "VasyOY8Bgf_oqanidw2a" } }
+
+
+POST _analyze
+{
+  "text": "Hello this is a testing for the analyze feature"
+}

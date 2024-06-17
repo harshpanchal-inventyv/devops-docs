@@ -1,0 +1,17 @@
+#todo : This is the service monitor file which scraps metrics from application if exposed
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    serviceMonitorSelector: prometheus
+    release: prometheus
+  name: backend-svc-monitor
+  namespace: default
+spec:
+  endpoints:
+  - port: backend-svc
+    interval: 5s
+    path: /metrics
+  selector:
+    matchLabels:
+     app: backend-svc

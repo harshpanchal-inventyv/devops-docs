@@ -1,0 +1,54 @@
+#todo: This is a network policy which helps to make restrictions over certain resources from other resources
+
+# But at first apply default deny so that the policy apply properly and effectively
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: default
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  # - Egress
+
+-------------------------
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: access-nginx
+spec:
+  podSelector:
+    matchLabels:
+      app: nginx
+  # This is a OR condition - the resource with label app: nginx was accessible through both the pod and namespace
+  ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            access: "true"
+      - namespaceSelector:
+          matchLabels:
+            ns: "frontend"
+
+----------------------------
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: access-nginx
+spec:
+  podSelector:
+    matchLabels:
+      app: nginx
+  # This is a AND condition - the resource with label app: nginx was accessible through only the pod with that label inside this ns: frontend namespace
+  ingress:
+    - from:
+      - podSelector:
+          matchLabels:
+            access: "true"
+        namespaceSelector:
+          matchLabels:
+            ns: "frontend"

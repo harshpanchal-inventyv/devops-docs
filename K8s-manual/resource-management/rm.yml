@@ -1,0 +1,88 @@
+#todo: Genrally when the CPU limits are excedded then it will reduces the cpu cycle per pod/container but not kill it.
+#todo: In excess of memory usage the pod was killed
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: resources-demo
+spec:
+  containers:
+  - name: resources-demo
+    image: polinux/stress
+    command: ["stress"]
+    args: ["--cpu", "2", "--vm", "1", "--vm-bytes", "1G", "--vm-hang", "1"]
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "200Mi"
+      limits:
+        cpu: "0.2"
+        memory: "1Gi"
+
+#? This is for the memory management of pods a basic limit range
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: limit-range
+spec:
+  limits:
+    - type: Pod
+      min:
+        cpu: 50m
+        memory: 5Mi
+      max:
+        cpu: "2"
+        memory: 6Gi
+    - type: Container
+      defaultRequest: #? Understand it as default assigned value
+        cpu: 100m
+        memory: 10Mi
+      default: #? Understand it as limit
+        cpu: 200m
+        memory: 100Mi
+      min: #? Should be less then default Request 
+        cpu: 50m
+        memory: 5Mi
+      max: #? Should be greater then default
+        cpu: "1"
+        memory: 5Gi
+      maxLimitRequestRatio:
+        cpu: "4"
+        memory: 10
+    - type: PersistentVolumeClaim
+      min:
+        storage: 1Gi
+      max:
+        storage: 10Gi
+
+
+#? This will manage the resources at the namespace level
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: resource-quota
+spec:
+  hard:
+    requests.cpu: 400m
+    requests.memory: 200Mi
+    limits.cpu: 2000m
+    limits.memory: 8Gi
+    pods: "10"
+    replicationcontrollers: "5"
+    secrets: "10"
+    configmaps: "10"
+    persistentvolumeclaims: "4"
+    services: "5"
+    services.loadbalancers: "1"
+    services.nodeports: "2"
+    # Only two PVCs can claim storage with the ssd StorageClass.
+    ssd.storageclass.storage.k8s.io/persistentvolumeclaims: "2"
+
+
+#! IMP points for Limit Range and Resource Quota 
+
+#* Limit Range 
+# The min parameter should not be violated by providing the pod a less memory, it accepts only min value or less than max value 
+
+#* Resource Quota
+# The default request value can be violated here and a pod can request resources less then the default request values 

@@ -1,0 +1,14 @@
+#? Configmap
+# Generally used to supply a username or any credentials which is not risky that much
+apiVersion: v1
+kind: ConfigMap
+metadata: 
+  name: mongodb-config
+immutable: false # If the value is true then the configmap was only deleted not updated
+data:
+  username: admin1
+  mongodb.conf: |
+    storage:
+      dbPath: /data/db
+    replication:
+        replSetName: "rs0"

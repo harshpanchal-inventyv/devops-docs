@@ -1,0 +1,130 @@
+This file includes basic operation like -
+- creating the index
+- inserting values
+- updating values
+- shards & replica Concept
+- Info about index queries
+- conditional updates
+
+GET _search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+GET _cluster/health
+
+GET _cat/nodes?v
+
+GET _cat/indices?v&expand_wildcards=all
+
+// Creating a index(table or collection)
+PUT /fruits
+
+GET /_cat/indices?v
+
+GET /_cat/shards
+
+
+// Creating and deleting the index
+PUT students
+DELETE students
+
+// It creates a primary and 2 shards but as replicas is 2 so it creates 2 primary and 4 shards as it is a replica
+PUT student 
+{
+  "settings": {
+    "number_of_shards": 2,
+    "number_of_replicas": 2
+  } 
+}
+
+
+// post a data to database
+POST student/_doc 
+{
+  "name": "Harsh",
+  "age": 21
+}
+
+// manual ID
+POST student/_doc/456891
+{
+  "name": "Harsh",
+  "age": 21
+}
+
+
+GET student/_doc/456891
+
+// delete student
+
+DELETE student/_doc/456891
+
+// fetch all students
+
+GET student/_search 
+{
+  "query": {
+    "match_all": {
+      
+    }
+  }
+}
+
+// Update specific field
+
+POST student/_update/456891
+{
+  "doc": {
+    "age": 25,
+    "lastname": "panchal"
+  }
+}
+
+// Updating document using source (ctx -> here defines the whole document)
+
+POST student/_update/456891
+{
+  "script": {
+    "source": "ctx._source.age=35"
+  }
+}
+// Updating the age using params
+POST student/_update/456891
+{
+  "script": {
+    "source": "ctx._source.age=params.new_age",
+    "params": {
+      "new_age": 10
+    }
+  }
+}
+
+// Conditional update
+// ctx.op -> ctx.operation(meaning)
+POST student/_update/456891
+{
+  "script": {
+    "source": """
+      if(ctx._source.age < 20){
+        ctx.op = 'delete'
+      }else {
+        ctx._source.age--;
+      }
+    """
+  }
+}
+
+// Concept of upsert (If there is no document for particular id then it insert the upsert body in student)
+POST student/_update/456892
+{
+  "script": {
+    "source": "ctx._source.age++"
+  },
+  "upsert": {
+    "name": "Praneet",
+    "age": 45
+  }
+}
