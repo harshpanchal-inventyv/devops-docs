@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: istio-component-monitor
+  namespace: istio-system  # Adjust this if your Istio components are in a different namespace
+  labels:
+    # release: prometheus  # Ensure this matches your Prometheus Operator's label selector
+# Verify the label for service-monitoring inside prometheus crd under its namespace for eg [kubectl get prometheus -n monitoring monitoring-stack-kube-prom-prometheus -o yaml | less ] after getting yaml verify the servicemonitor label
+    release: monitoring-stack 
+spec:
+  selector:
+    matchLabels:
+      istio: pilot  # This targets the istiod service
+  namespaceSelector:
+    matchNames:
+      - istio-system  # Adjust this if your Istio components are in a different namespace
+  endpoints:
+  - port: http-monitoring  # The port name used by istiod for metrics
+    interval: 15s
+  - port: http-envoy-prom  # The port used by Envoy sidecar for metrics
+    interval: 15s

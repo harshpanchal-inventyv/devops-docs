@@ -1,0 +1,15 @@
+#todo : For kiali to scrape metric from prometheus operator, we need to configure the external_service section present in configmap of kiali under istio-system namespace
+
+#? This is how it looks in kiali configmap (without configuring any servicemonitor)
+external_services:
+  custom_dashboards:
+    enabled: true
+  istio:
+    root_namespace: istio-system
+  tracing:
+    enabled: false
+  prometheus:
+    url: "http://monitoring-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090"
+
+
+
